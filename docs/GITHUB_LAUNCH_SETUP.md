@@ -79,6 +79,15 @@ On `main`: require PR review before merge (per `GOVERNANCE.md` — direct
 pushes bypass the review process the docs promise), require the CI
 workflow to pass, do not allow force-push.
 
+**Status: done.** Applied via the GitHub API on `main`: 1 required
+approving review (dismissed on new pushes), required status checks
+`test (3.11)`, `test (3.12)`, `secret-scan` (strict — branch must be
+up to date), no force-pushes, no branch deletion. `enforce_admins` is
+deliberately `false` so the repository owner can bypass for
+single-maintainer operation (solo urgent fixes) without disabling the
+protection for everyone else — this matches the "allow owner bypass"
+requirement, not an oversight.
+
 ## 5. Discussions
 
 Enable Discussions. Categories, per `docs/OPEN_SOURCE_LAUNCH_STRATEGY.md`:
@@ -87,6 +96,16 @@ Enable Discussions. Categories, per `docs/OPEN_SOURCE_LAUNCH_STRATEGY.md`:
 Announcements, Ideas, Show and Tell, Model Providers, AI Art, Research,
 Help, General
 ```
+
+**Status as actually executed:** Discussions was enabled, but custom
+category creation turned out to require the GitHub web UI — there is no
+REST or GraphQL mutation for it (confirmed by schema introspection). Only
+GitHub's 6 defaults exist today (Announcements, General, Ideas, Polls,
+Q&A, Show and tell); `Model Providers` / `AI Art` / `Research` / `Help`
+from this plan were never created. See
+[`docs/community.md`](community.md) for what's actually live. If those
+four still matter, they're a short manual step: repo → Discussions tab →
+category gear icon → New category.
 
 Post one pinned "Welcome" announcement (draft below) linking `README.md`,
 `CONTRIBUTING.md`, and the track selector.
