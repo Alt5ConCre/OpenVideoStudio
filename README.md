@@ -212,17 +212,19 @@ build all of it ourselves so there'd be something worth contributing to.
 | 🐧 [Linux](docs/COMMUNITY_TRACKS.md#track-e--platform-support) / 🍎 [macOS](docs/COMMUNITY_TRACKS.md#track-e--platform-support) | Platform support beyond the currently-tested Windows setup |
 | 🌍 [Translation](docs/COMMUNITY_TRACKS.md#track-h--documentation--localization) / 📚 [Documentation](docs/COMMUNITY_TRACKS.md#track-h--documentation--localization) | Localization, install guides, tutorials |
 
-Start here: [`docs/ISSUES_SEED.md`](docs/ISSUES_SEED.md) has ready-to-pick
-`good first issue`s with full acceptance criteria, and
-[`docs/contribution.md`](docs/contribution.md) / [`CONTRIBUTING.md`](CONTRIBUTING.md)
-cover the contribution process end to end — forking, branching, PRs,
-DCO sign-off, and how contribution turns into repository access over
-time.
+Start here: [`docs/good-first-issues.md`](docs/good-first-issues.md) has
+beginner-friendly starter tasks (both live issues and not-yet-filed
+ideas), and [`docs/contribution.md`](docs/contribution.md) /
+[`CONTRIBUTING.md`](CONTRIBUTING.md) cover the contribution process end
+to end — forking, branching, PRs, DCO sign-off, and how contribution
+turns into repository access over time. New here? Start with a
+Discussion or a `good first issue` before taking on something large.
 
 ## Community
 
 - **[GitHub Discussions](../../discussions)** — usage questions, ideas,
-  and workflow sharing live here, not in Issues.
+  and workflow sharing live here, not in Issues. See
+  [`docs/community.md`](docs/community.md) for what each category is for.
 - **Issues** — structured templates for
   [bugs](.github/ISSUE_TEMPLATE/bug_report.md),
   [features](.github/ISSUE_TEMPLATE/feature_request.md),

@@ -4,6 +4,67 @@ Thanks for considering it. This guide covers how to report issues, how to
 find something to work on, how the review process works, and how you
 earn more trust (and more repository access) over time.
 
+## Welcome contributors
+
+OpenVideoStudio welcomes contributions from AI researchers, developers,
+video creators, workflow designers, documentation contributors, and
+testers — you don't need to be all of those at once, and you don't need
+to be an AI expert. A typo fix in `docs/INSTALL.md` is as genuinely
+welcome as a new provider.
+
+Contribution areas this project explicitly wants, not just tolerates:
+
+- **AI model integration** — new LLM/image/video/TTS providers (see the
+  Model Gateway and Provider Integrations tracks in
+  [`docs/COMMUNITY_TRACKS.md`](docs/COMMUNITY_TRACKS.md))
+- **Video generation workflows** — pipeline stages, checkpointing,
+  resumability, the review-gate mechanics, shared prompt/storyboard
+  workflows (see the [Workflow share](.github/ISSUE_TEMPLATE/workflow_share.md)
+  template)
+- **UI/UX improvements** — the Gradio interface, the storyboard review
+  table, Media Remix
+- **Documentation** — install guides, architecture explanations, fixing
+  something that confused you
+- **Examples** — see [`docs/good-first-issues.md`](docs/good-first-issues.md)
+  for realistic starter tasks
+- **Testing** — new test coverage, hardware reports on GPUs/OSes not yet
+  in [`docs/HARDWARE.md`](docs/HARDWARE.md), cross-platform validation
+- **Translations** — see the Documentation & Localization track in
+  [`docs/COMMUNITY_TRACKS.md`](docs/COMMUNITY_TRACKS.md)
+- **Bug reports** — see "Reporting an issue" below
+
+### The contribution workflow, in one picture
+
+```
+Discussion
+    ↓
+Issue
+    ↓
+Pull Request
+    ↓
+Code Review
+    ↓
+Merge
+```
+
+Not every contribution starts at the top — a clear bug report can go
+straight to an Issue, and a trivial docs fix can go straight to a PR. But
+**new contributors are encouraged to start with discussions or good
+first issues before making large changes** — it's the easiest way to
+confirm the direction is right before you invest real time. See "Good
+first issues" and "Find something to work on" below, and "What needs
+discussion first" for the cases where a Discussion isn't just encouraged
+but expected first.
+
+### Good first issues
+
+New here? [`docs/good-first-issues.md`](docs/good-first-issues.md) has
+realistic, beginner-friendly starter tasks — documentation, examples,
+translations, small UI fixes — cross-referenced against the real, live
+`good first issue`-labeled issues in this repo, not a hypothetical list.
+You're welcome either way: pick a listed task, or open a Discussion with
+your own idea.
+
 ## Reporting an issue
 
 Before opening anything, check whether it's actually a bug/feature/model
