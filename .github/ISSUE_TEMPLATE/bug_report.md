@@ -27,4 +27,7 @@ labels: []
 paste here
 ```
 
+**Possible solution (optional)**
+If you have a guess at the cause or fix, note it here — not required.
+
 **Have you checked `docs/INSTALL.md`'s troubleshooting section?**

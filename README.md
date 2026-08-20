@@ -3,20 +3,30 @@
 **A local-first, Apache-2.0-licensed AI video creation studio.**
 From one prompt to a complete video — most of it never leaves your machine.
 
-[中文](README_CN.md) · [Install](docs/INSTALL.md) · [Roadmap](ROADMAP.md) · [Contributing](CONTRIBUTING.md)
+[中文](README_CN.md) · [Install](docs/INSTALL.md) · [Architecture](docs/architecture.md) · [Roadmap](ROADMAP.md) · [Contributing](CONTRIBUTING.md) · [Discussions](../../discussions)
+
+### In one look
+
+| | |
+|---|---|
+| **What it is** | An open-source pipeline that turns one text prompt into a fully edited, narrated, subtitled video — script → storyboard → character/environment identity → keyframes → video clips → narration → subtitles → final video. |
+| **Why it exists** | Built by one developer on a 6GB laptop GPU, without a GPU farm or unlimited AI credits — so the pipeline had to actually run on modest hardware, not just a data-center demo. |
+| **How it's different** | Local-first (script/storyboard/identity/keyframes/video all run on your own machine), provider-swappable by config not code, resumable with per-scene checkpointing, and a mandatory human review gate before any GPU generation starts — see [Features](#features) for what that means concretely. |
+| **How to try it** | `git clone` → `pip install -r requirements.txt` → `python app.py`. Full steps in [Quick Start](#quick-start). |
 
 *One thing worth knowing up front: narration currently uses one cloud
-service by default (Edge TTS) — not buried, see "Local by default"
+service by default (Edge TTS) — not buried, see
+["Local by default"](#local-by-default-with-one-disclosed-exception)
 below. Everything else in the pipeline runs on your own hardware.*
 
-### 🎬 See it work
+## Demo
 
 ![A real, unedited OpenVideoStudio run: an astronaut exploring an abandoned space station](examples/hero_demo/preview.gif)
 
 *"Echoes of Home" — generated end-to-end from a single prompt: script →
 storyboard → character/environment identity → 6 keyframes → 6 video
 clips → narration → subtitles → automated edit. 2× speed above; full
-32.9s video and complete provenance (prompt, models) in
+32.9s video and complete provenance (prompt, models, seeds) in
 [`examples/hero_demo/`](examples/hero_demo/). Not a mockup — this is the
 actual pipeline, unedited. **Worth knowing:** this particular run's
 character identity visibly drifts across scenes (hair/face aren't fully
@@ -25,7 +35,50 @@ consistent) — a real, disclosed instance of the gap
 to close, not something we edited around. Full account in
 [`examples/hero_demo/README.md`](examples/hero_demo/README.md).*
 
-## What it does
+## Vision
+
+OpenVideoStudio's near-term goal is what's already shipping: a reliable,
+local-first, single-prompt-to-video pipeline that runs on consumer
+hardware. Its longer-term direction is to grow into a more complete
+open-source AI video production system — richer story planning, a real
+character-memory model, a visual workflow editor, and community-shared
+workflows — the way ComfyUI grew from a single Stable Diffusion graph
+runner into a general node-based generation platform, or the way
+Blender's pipeline grew around a stable open core.
+
+None of that long-term direction is built yet. See
+[`docs/architecture.md`](docs/architecture.md)'s "Long-term vision"
+section and [`ROADMAP.md`](ROADMAP.md) for exactly what's real today
+versus what's an aspiration with no code behind it — this README does
+not blur that line.
+
+## Architecture overview
+
+```
+Providers (Ollama · ComfyUI · Edge TTS)
+        ↓
+Creative pipeline (script → storyboard → identity → keyframes → clips)
+        ↓
+Review gate (you approve before any GPU generation runs)
+        ↓
+Render core (FFmpeg: narration mix, subtitle burn, freeze/motion QC)
+        ↓
+Final video
+```
+
+Every model category (LLM, image, video, TTS) is an interface in
+`providers/base.py`; which concrete provider runs is a `config.toml`
+setting, not a code change — adding one is a new file plus a two-line
+registry entry in `providers/registry.py`. The creative pipeline and the
+render core are also shared by **Media Remix**, a secondary tool in the
+same app for editing your own photo/video library — two front-end
+workflows over one render engine, not two separate video engines.
+
+→ Full component breakdown, plus the long-term "Story Engine / Scene
+Graph / Character Memory" vision architecture (not built — clearly
+marked as such): [`docs/architecture.md`](docs/architecture.md).
+
+## AI video pipeline
 
 ```
 Prompt
@@ -34,14 +87,20 @@ Prompt
   → Character / Environment identity
   → Keyframes
   → AI video clips
-  → Voice
+  → Voice (narration)
   → Subtitles
-  → Audio
   → Automated editing
   → Final video
 ```
 
 One prompt goes in. A fully edited, narrated, subtitled video comes out.
+Generation is checkpointed stage by stage — a scene whose keyframe/clip
+already exists is skipped on rerun, so a failed run resumes instead of
+restarting from scratch — and nothing renders past the storyboard until
+you review and approve it.
+
+→ Step-by-step walkthrough of what each stage does and which run
+locally vs. in the cloud: [`docs/workflow.md`](docs/workflow.md).
 
 ### Local by default, with one disclosed exception
 
@@ -55,11 +114,11 @@ network. A fully local/offline TTS provider doesn't ship yet — see
 contribution. We'd rather disclose this clearly than let "local" imply
 more than what's actually true today.
 
-## Why OpenVideoStudio
+## Features
 
 - **Free and open source.** Apache-2.0 licensed — no account, no
-  paywall, no usage metering on the software itself. See the License
-  section below for exactly what that does and doesn't cover.
+  paywall, no usage metering on the software itself. See [License](#license)
+  for exactly what that does and doesn't cover.
 - **Local-first.** See above — everything except narration's default
   provider runs entirely on your own hardware.
 - **Consumer-GPU friendly.** Verified end-to-end on a 6GB laptop GPU (see
@@ -67,17 +126,11 @@ more than what's actually true today.
   expected vs. unknown — we don't claim hardware support we haven't
   verified; NVENC-capable NVIDIA GPUs only for now, no CPU/other-vendor
   encode fallback yet).
-- **Provider selection is a config change, not a code change.** Every
-  model category (LLM, image, video, TTS) is defined as an interface in
-  `providers/base.py`; which concrete provider runs is read from
-  `config.toml`, not hardcoded in the pipeline. Adding a new provider is
-  one new file implementing the relevant interface, plus a two-line
-  registration (an import and a registry entry) in `providers/registry.py`
-  — see
-  [`docs/COMMUNITY_TRACKS.md`](docs/COMMUNITY_TRACKS.md)'s Model Gateway
-  track. An OpenAI-compatible adapter doesn't ship yet (tracked as a
-  seeded issue) — today's shipped providers are Ollama, ComfyUI
-  (SDXL + LTX-Video), and Edge TTS.
+- **Provider selection is a config change, not a code change.** See
+  [Architecture overview](#architecture-overview) above. An
+  OpenAI-compatible adapter doesn't ship yet (tracked as a seeded issue)
+  — today's shipped providers are Ollama, ComfyUI (SDXL + LTX-Video), and
+  Edge TTS.
 - **Resumable, with a human review gate.** Generation is checkpointed
   stage by stage; nothing renders past the storyboard until you approve
   it, and a failed run resumes instead of restarting from scratch.
@@ -85,6 +138,7 @@ more than what's actually true today.
   narrative-quality checks run automatically during generation.
 
 Two modes, one honest label for each:
+
 - **Quick Mode** (shipping today): prompt → automatic generation up to a
   mandatory storyboard review checkpoint → (you approve) → automatic
   generation → final video. It's not zero-touch end-to-end by design —
@@ -92,10 +146,21 @@ Two modes, one honest label for each:
 - **Pro Mode** (roadmap, not yet built): a guided UI over character
   design, environment design, and keyframe review as their own steps,
   plus a real timeline editor. See [`ROADMAP.md`](ROADMAP.md) — anything
-  not shipping today is labeled ROADMAP, HELP WANTED, or RESEARCH, never
+  not shipping today is labeled PLANNED, HELP WANTED, or RESEARCH, never
   presented as done.
 
-## Try it
+## Installation
+
+Verified on **Windows 10/11**, an NVIDIA GPU with **6GB+ VRAM** and
+NVENC, Python 3.11+, Ollama, ComfyUI, and FFmpeg. Models (Ollama LLM,
+SDXL, LTX-Video checkpoints) are multi-gigabyte downloads, not bundled in
+this repository.
+
+→ Quick orientation: [`docs/installation.md`](docs/installation.md)
+→ Full step-by-step guide (prerequisites, exact model filenames and
+sources, troubleshooting): [`docs/INSTALL.md`](docs/INSTALL.md)
+
+## Quick Start
 
 ```bash
 git clone <repository-url>
@@ -105,14 +170,74 @@ cp .env.example .env    # set COMFYUI_ROOT
 python app.py
 ```
 
-Full setup (models, Ollama, ComfyUI, ffmpeg, troubleshooting) in
-[`docs/INSTALL.md`](docs/INSTALL.md) — targeting under 10 minutes once
-you already have the required models downloaded.
+Targeting under 10 minutes once you already have the required models
+downloaded. Opens a local Gradio UI with two tabs: **AI Creation** (the
+prompt-to-video pipeline above) and **Media Remix** (turn your own
+personal photo/video library into an edited montage, built on the same
+shared FFmpeg/audio/scoring core).
 
-Also included: **Media Remix**, a secondary tool in the same app for
-turning your own personal photo/video library into an edited montage —
-built on the same shared FFmpeg/audio/scoring core as the AI Creation
-pipeline.
+Verify your install without touching a GPU:
+
+```bash
+cd studio && python -m pytest tests/ -q
+```
+
+## Roadmap
+
+Shipped: prompt → script → storyboard → character/environment identity →
+keyframes → clips → narration → subtitles → final video, local Ollama +
+ComfyUI generation, resumable per-scene checkpointing, 67/67 tests
+passing. Not yet built: Pro Mode's guided UI, a real timeline editor,
+additional providers beyond Ollama/ComfyUI/Edge TTS, and the longer-term
+Character Memory / Scene Graph / multi-agent direction covered in
+[Vision](#vision) above.
+
+→ Full status by version, with DONE / HELP WANTED / RESEARCH / PLANNED
+labels on every line: [`ROADMAP.md`](ROADMAP.md)
+
+## Contributing
+
+The core pipeline is maintainer-led and tested. Everything past that is a
+real, independently claimable contribution track — we deliberately didn't
+build all of it ourselves so there'd be something worth contributing to.
+
+| Track | What it covers |
+|---|---|
+| 🎨 [AI Art Studio](docs/COMMUNITY_TRACKS.md#track-a--ai-art--visual-development) | Character/environment bibles, reference conditioning, inpainting, Krita integration |
+| 🧑 [Character Consistency](docs/COMMUNITY_TRACKS.md#track-c--character-consistency) | Visual identity drift, face-similarity QC, benchmarks |
+| 🔌 [Model Gateway](docs/COMMUNITY_TRACKS.md#track-b--universal-model-gateway) | OpenAI-compatible/llama.cpp/vLLM providers, enterprise endpoints |
+| 🎬 [Video Models](docs/COMMUNITY_TRACKS.md#track-d--provider-integrations) | Additional image/video model adapters |
+| 🎞 [Timeline Editor](docs/COMMUNITY_TRACKS.md#track-f--timeline--editor) | Scene reorder, trimming, transitions, subtitle editor |
+| 🧪 [AI Video QC](docs/COMMUNITY_TRACKS.md#track-g--ai-video-qc) | Final-video freeze QC, duplicate-shot/audio QC, quality scoring |
+| 🐧 [Linux](docs/COMMUNITY_TRACKS.md#track-e--platform-support) / 🍎 [macOS](docs/COMMUNITY_TRACKS.md#track-e--platform-support) | Platform support beyond the currently-tested Windows setup |
+| 🌍 [Translation](docs/COMMUNITY_TRACKS.md#track-h--documentation--localization) / 📚 [Documentation](docs/COMMUNITY_TRACKS.md#track-h--documentation--localization) | Localization, install guides, tutorials |
+
+Start here: [`docs/ISSUES_SEED.md`](docs/ISSUES_SEED.md) has ready-to-pick
+`good first issue`s with full acceptance criteria, and
+[`docs/contribution.md`](docs/contribution.md) / [`CONTRIBUTING.md`](CONTRIBUTING.md)
+cover the contribution process end to end — forking, branching, PRs,
+DCO sign-off, and how contribution turns into repository access over
+time.
+
+## Community
+
+- **[GitHub Discussions](../../discussions)** — usage questions, ideas,
+  and workflow sharing live here, not in Issues.
+- **Issues** — structured templates for
+  [bugs](.github/ISSUE_TEMPLATE/bug_report.md),
+  [features](.github/ISSUE_TEMPLATE/feature_request.md),
+  [model/provider requests](.github/ISSUE_TEMPLATE/model_request.md), and
+  [workflow shares](.github/ISSUE_TEMPLATE/workflow_share.md).
+- **[Code of Conduct](CODE_OF_CONDUCT.md)** — Contributor Covenant 2.1;
+  applies to all project spaces.
+- **[Governance](GOVERNANCE.md)** — how the project is run, and exactly
+  how contribution turns into Trusted Contributor / Reviewer / Maintainer
+  status. Sponsors never buy governance — see `GOVERNANCE.md`'s
+  "Sponsors do not buy governance" section.
+- **[Support](SUPPORT.md)** — where to get help, and how to reach
+  maintainers for non-security issues.
+- **Security** — please report vulnerabilities privately; see
+  [`SECURITY.md`](SECURITY.md). Do not open a public issue.
 
 ## Why I built this
 
@@ -139,28 +264,6 @@ API budgets. Found a bug? Open an issue. Have an idea? Start a
 Discussion. Can fix even one small thing? Send a PR — see
 [`CONTRIBUTING.md`](CONTRIBUTING.md). I'd like the Contributors page to
 eventually have more than one name on it.
-
-## Want to help build OpenVideoStudio?
-
-The core pipeline is maintainer-led and tested. Everything past that is a
-real, independently claimable contribution track — we deliberately didn't
-build all of it ourselves so there'd be something worth contributing to.
-
-| Track | What it covers |
-|---|---|
-| 🎨 [AI Art Studio](docs/COMMUNITY_TRACKS.md#track-a--ai-art--visual-development) | Character/environment bibles, reference conditioning, inpainting, Krita integration |
-| 🧑 [Character Consistency](docs/COMMUNITY_TRACKS.md#track-c--character-consistency) | Visual identity drift, face-similarity QC, benchmarks |
-| 🔌 [Model Gateway](docs/COMMUNITY_TRACKS.md#track-b--universal-model-gateway) | OpenAI-compatible/llama.cpp/vLLM providers, enterprise endpoints |
-| 🎬 [Video Models](docs/COMMUNITY_TRACKS.md#track-d--provider-integrations) | Additional image/video model adapters |
-| 🎞 [Timeline Editor](docs/COMMUNITY_TRACKS.md#track-f--timeline--editor) | Scene reorder, trimming, transitions, subtitle editor |
-| 🧪 [AI Video QC](docs/COMMUNITY_TRACKS.md#track-g--ai-video-qc) | Final-video freeze QC, duplicate-shot/audio QC, quality scoring |
-| 🐧 [Linux](docs/COMMUNITY_TRACKS.md#track-e--platform-support) / 🍎 [macOS](docs/COMMUNITY_TRACKS.md#track-e--platform-support) | Platform support beyond the currently-tested Windows setup |
-| 🌍 [Translation](docs/COMMUNITY_TRACKS.md#track-h--documentation--localization) / 📚 [Documentation](docs/COMMUNITY_TRACKS.md#track-h--documentation--localization) | Localization, install guides, tutorials |
-
-Start here: [`docs/ISSUES_SEED.md`](docs/ISSUES_SEED.md) has ready-to-pick
-`good first issue`s with full acceptance criteria, and
-[`CONTRIBUTING.md`](CONTRIBUTING.md) covers the contribution process end
-to end.
 
 ## Project status
 

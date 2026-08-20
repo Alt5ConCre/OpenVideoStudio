@@ -1,8 +1,30 @@
 # Contributing to OpenVideoStudio
 
-Thanks for considering it. This guide covers how to find something to
-work on, how the review process works, and how you earn more trust (and
-more repository access) over time.
+Thanks for considering it. This guide covers how to report issues, how to
+find something to work on, how the review process works, and how you
+earn more trust (and more repository access) over time.
+
+## Reporting an issue
+
+Before opening anything, check whether it's actually a bug/feature/model
+request versus a usage question — usage and "how do I" questions belong
+in [Discussions](../../discussions), not Issues (see
+`.github/ISSUE_TEMPLATE/config.yml`).
+
+For everything else, pick the template that fits:
+
+- **Something's broken** → [Bug report](.github/ISSUE_TEMPLATE/bug_report.md) —
+  include what happened, what you expected, exact repro steps, and your
+  environment (OS, GPU/VRAM, Python version, commit hash).
+- **An idea, or a community-track proposal** → [Feature request](.github/ISSUE_TEMPLATE/feature_request.md)
+- **A new LLM/image/video/TTS provider** → [Model request](.github/ISSUE_TEMPLATE/model_request.md)
+- **A prompt/storyboard combination worth sharing** → [Workflow share](.github/ISSUE_TEMPLATE/workflow_share.md)
+- **A security vulnerability** → **not a public issue** — see
+  [`SECURITY.md`](SECURITY.md)'s private reporting process.
+
+A good issue is one a maintainer can act on without a round of
+clarifying questions: concrete repro steps beat a general description,
+and "here's what I expected instead" beats "this is wrong."
 
 ## Find something to work on
 
@@ -45,15 +67,43 @@ python -m pytest tests/ -q
 
 ## Making a change
 
-1. Fork the repo, branch from `main`.
-2. Write tests for what you change — this project's test suite exists
+1. **Fork the repository** (top-right on GitHub), then clone your fork
+   locally.
+2. **Branch from `main`.** Name it so a reviewer can tell what it's for
+   at a glance — `fix/<short-description>`, `feature/<short-description>`,
+   or `docs/<short-description>` (e.g. `fix/subtitle-font-linux`,
+   `feature/openai-provider`). Not enforced by tooling, just a courtesy.
+3. **Write tests for what you change** — this project's test suite exists
    specifically because past bugs (see commit history) were caught by
    exactly this discipline. A PR that changes pipeline behavior without a
    test covering it will be asked to add one before review.
-3. Sign off your commits (`git commit -s`) — see "Developer Certificate of
-   Origin" below.
-4. Open a PR using the template in
+4. **Sign off your commits** (`git commit -s`) — see "Developer
+   Certificate of Origin" below.
+5. **Open a PR** against `main`, using the template in
    `.github/PULL_REQUEST_TEMPLATE.md`.
+
+### Code contributions
+
+- Match the style already in the file you're editing rather than
+  introducing a new convention.
+- Prefer a focused PR over a sprawling one — a change that touches one
+  pipeline stage is easier to review (and revert, if needed) than one
+  that touches five.
+- If your change affects a shared interface, see "What needs discussion
+  first" below — raise it in a Discussion before writing the PR, not
+  after.
+
+### Documentation contributions
+
+Docs fixes don't need the full dev environment set up — you can edit
+Markdown directly on GitHub for small changes (typos, broken links,
+clarifications) and open a PR the same way. For anything larger (a new
+guide, a restructure), open a Discussion first so the shape is agreed
+before you write it. Docs PRs go through the same review process as code
+— see [`docs/COMMUNITY_TRACKS.md`](docs/COMMUNITY_TRACKS.md)'s
+Documentation & Localization track for translation-specific guidance
+(keeping factual claims, especially hardware/feature-status ones, in
+sync with the English original is the main thing reviewers check).
 
 ## What needs discussion first
 

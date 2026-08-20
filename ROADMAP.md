@@ -36,7 +36,7 @@ not started).
 - Stronger semantic validation at LLM output boundaries (rejects
   parseable-but-wrong-shaped responses instead of silently coercing them)
 - Real Ollama + ComfyUI end-to-end validation
-- 54/54 tests passing
+- 67/67 tests passing
 - Independently reviewed and cleared (see the project's development
   history)
 
@@ -70,6 +70,47 @@ Maintainer-led, not yet started, no committed timeline:
   video) — the pipeline stages already exist; the guided UI layer over
   them does not
 - Additional providers beyond what ships in v0.3 or lands via Track D
+
+## Long-term vision — PLANNED, no version assigned, not started
+
+These are direction-setting ideas, not scheduled work — they exist so
+contributors can see where the project is trying to go beyond v0.4, not
+because any of them has a design or an owner yet. See
+[`docs/architecture.md`](docs/architecture.md)'s "Long-term vision"
+diagram for how these relate to each other conceptually. None of this
+exists in code today.
+
+- **Character Memory System** — a persistent identity/appearance store,
+  beyond today's single-shot identity object (`creative/identity.py`).
+  Builds on whatever [Track C](docs/COMMUNITY_TRACKS.md#track-c--character-consistency)
+  (Character Consistency) establishes first; there's no memory system to
+  build until identity representation itself is more solid.
+- **Scene Graph System** — a structured, queryable representation of
+  scenes/characters/objects/relationships, replacing today's flat
+  per-scene storyboard dict. Would be a significant internal data-model
+  change, not a small addition.
+- **Visual Workflow Editor** — a node/graph-based editor for the pipeline
+  itself (distinct from the Timeline Editor in
+  [Track F](docs/COMMUNITY_TRACKS.md#track-f--timeline--editor), which
+  edits the *output* video, not the generation pipeline).
+- **Better asset management** — organizing/searching/reusing generated
+  keyframes, clips, and identities across projects, instead of today's
+  one-run-directory-per-generation layout.
+- **Multi-agent video production** — exploring whether specialized
+  agents (writing, art direction, continuity checking) produce better
+  results than today's single-pass script/storyboard/identity calls. Pure
+  research direction at this point — no design exists.
+- **Collaborative workflow sharing / community workflow marketplace** —
+  today, "sharing a workflow" means posting a prompt and settings via a
+  [Workflow share](.github/ISSUE_TEMPLATE/workflow_share.md) issue or a
+  Discussion (see `docs/contribution.md`). An actual marketplace would
+  need real infrastructure — hosting, moderation, versioning — that
+  doesn't exist and isn't designed yet. Don't read "marketplace" here as
+  a promise of a specific feature; it's a direction, not a spec.
+
+If one of these interests you, the honest starting point for most of
+them is a GitHub Discussion proposing a design, not a PR — see
+`CONTRIBUTING.md`'s "What needs discussion first."
 
 ## What this roadmap deliberately does not promise
 
