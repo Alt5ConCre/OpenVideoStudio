@@ -18,7 +18,13 @@ class LLMProvider(Protocol):
 
 class ImageProvider(Protocol):
     def generate_image(
-        self, prompt: str, negative_prompt: str, width: int, height: int, seed: Optional[int] = None
+        self, prompt: str, negative_prompt: str, width: int, height: int, seed: Optional[int] = None,
+        # Optional reference-image conditioning (img2img) -- not every
+        # provider implements this; callers that need it (e.g.
+        # creative/keyframes.py's optional per-scene `reference_image`
+        # field, see creative/references.py) should check the concrete
+        # provider's own docs. ComfyUISDXLProvider implements both.
+        reference_image_path: Optional[Path] = None, denoise: float = 1.0,
     ) -> Path: ...
 
 

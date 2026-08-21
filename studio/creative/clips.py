@@ -14,6 +14,34 @@ from providers.base import VideoProvider
 
 _FREEZE_NOISE_DB = "-60dB"
 
+_STATIC_TECHNIQUE = "static"  # scene["shot_technique"] value that skips the VideoProvider entirely
+
+
+def _static_pan_clip(keyframe_path: Path, duration_seconds: float, width: int, height: int, out_path: Path) -> None:
+    """Animate a still keyframe with a simple FFmpeg Ken Burns pan/zoom
+    instead of calling the (GPU-heavy) VideoProvider. For shots where the
+    composition itself is the content and no physical motion needs to be
+    generated (an establishing wide shot, a "standing and looking" beat,
+    a static product close-up) -- asking LTX for near-zero motion wastes a
+    generation slot and, worse, risks a near-frozen result anyway (see
+    clips.py's own freeze detection above). No new GPU call, no new
+    dependency -- plain FFmpeg, same technique already used for the
+    project's own launch-trailer card scenes."""
+    d = duration_seconds + 0.2
+    fps = 24
+    vf = (
+        f"scale={width * 3}:-1,"
+        f"zoompan=z='min(zoom+0.0012,1.10)':d={int(d * fps)}:s={width}x{height}:fps={fps},"
+        "format=yuv420p"
+    )
+    subprocess.run(
+        [
+            "ffmpeg", "-y", "-loop", "1", "-i", str(keyframe_path), "-t", f"{d:.3f}",
+            "-vf", vf, "-r", str(fps), "-an", str(out_path),
+        ],
+        check=True, capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
+
 # This checks the RAW clip, before run_edit's setpts retime (which slows a
 # clip down when narration runs longer than the raw LTX output — see
 # creative/pipeline.py). 1.0s is "a viewer would actually notice this as
@@ -101,6 +129,19 @@ def generate_clips(
             continue
 
         base_seed = scene.get("keyframe_seed", n)
+
+        if scene.get("shot_technique") == _STATIC_TECHNIQUE:
+            # No VideoProvider call at all -- see _static_pan_clip's docstring.
+            # Freeze QC doesn't apply here: a pan/zoom clip is deliberately
+            # near-static by construction, not a motion-generation failure.
+            dest = out_dir / f"scene_{n:02d}.mp4"
+            _static_pan_clip(Path(keyframe), scene["duration_seconds"], width, height, dest)
+            scene["clip_path"] = str(dest)
+            scene["clip_freeze_seconds"] = 0.0
+            if checkpoint:
+                checkpoint(storyboard)
+            continue
+
         path = video_provider.generate_video(
             prompt=scene.get("video_motion_prompt", "subtle camera movement"),
             negative_prompt=scene.get("video_negative_prompt", ""),

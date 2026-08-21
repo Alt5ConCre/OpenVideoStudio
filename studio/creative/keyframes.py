@@ -44,7 +44,17 @@ def _composed_negative_prompt(scene: dict) -> str:
 def generate_keyframes(
     image_provider: ImageProvider, storyboard: dict, out_dir: Path, width: int = 448, height: int = 768,
     seed_base: int = 0, checkpoint: Optional[Callable[[dict], None]] = None,
+    reference_set: Optional[dict[str, Path]] = None, default_reference_denoise: float = 0.5,
 ) -> dict:
+    """reference_set (optional): {name: path}, typically produced by
+    creative.references.generate_reference_set. A scene opts into
+    image-conditioning by setting its own `reference_image` field to one of
+    reference_set's keys (and optionally `reference_denoise`, a per-scene
+    override of default_reference_denoise) -- e.g. for a recurring
+    character or a recurring piece of hardware. A scene with no
+    `reference_image` (or when reference_set is None) generates exactly as
+    before, pure txt2img -- this is purely additive, existing storyboards
+    and callers are unaffected."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -57,9 +67,15 @@ def generate_keyframes(
             continue
 
         seed = seed_base + n
+        ref_name = scene.get("reference_image")
+        ref_path = (reference_set or {}).get(ref_name) if ref_name else None
+        extra_kwargs = {}
+        if ref_path is not None:
+            extra_kwargs["reference_image_path"] = ref_path
+            extra_kwargs["denoise"] = scene.get("reference_denoise", default_reference_denoise)
         path = image_provider.generate_image(
             prompt=_composed_image_prompt(storyboard, scene), negative_prompt=_composed_negative_prompt(scene),
-            width=width, height=height, seed=seed,
+            width=width, height=height, seed=seed, **extra_kwargs,
         )
         # ComfyUI writes into its own output/ tree; copy so the run directory stays self-contained.
         dest = out_dir / f"scene_{n:02d}.png"
