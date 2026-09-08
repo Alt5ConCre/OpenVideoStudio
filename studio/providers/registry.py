@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from providers.llm.ollama_provider import OllamaProvider
 from providers.image.comfyui_sdxl import ComfyUISDXLProvider
+from providers.image.instantid_sdxl import InstantIDImageProvider
 from providers.video.comfyui_ltx import ComfyUILTXProvider
 from providers.tts.edge_tts_provider import EdgeTTSProvider
 from providers.identity_text import TextIdentityProvider
@@ -20,6 +21,7 @@ PROVIDERS = {
     },
     "image": {
         "comfyui_sdxl": ComfyUISDXLProvider,
+        "instantid_sdxl": InstantIDImageProvider,
     },
     "video": {
         "comfyui_ltx": ComfyUILTXProvider,
