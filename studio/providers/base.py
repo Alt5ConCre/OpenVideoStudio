@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Protocol
+from typing import Optional, Protocol, runtime_checkable
+
+from identity.models import CharacterAsset, IdentityApplication, IdentityEncoding
 
 
 class LLMProvider(Protocol):
@@ -45,3 +47,17 @@ class TTSResult:
 
 class TTSProvider(Protocol):
     def synthesize(self, text: str, voice: str, language: str) -> TTSResult: ...
+
+
+@runtime_checkable
+class IdentityProvider(Protocol):
+    """Model-agnostic character identity control.
+
+    Implementations may use reference images, embeddings, fine-tunes, face
+    features, text, or a future mechanism. The creative pipeline only passes
+    canonical assets in and opaque, provider-owned conditioning out.
+    """
+
+    def encode_character(self, character_asset: CharacterAsset) -> IdentityEncoding: ...
+
+    def apply_identity(self, prompt: str, identity: IdentityEncoding) -> IdentityApplication: ...
