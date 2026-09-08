@@ -1,4 +1,4 @@
-# Identity Provider Licensing (InsightFace dependency)
+# InsightFace-Dependent Provider Licensing
 
 This document exists because the most obvious way to implement real
 face-identity conditioning — IP-Adapter FaceID, InstantID, PuLID — all
@@ -6,37 +6,54 @@ depend on [InsightFace](https://github.com/deepinsight/insightface)'s face
 detection/recognition models (`buffalo_l`, `antelopev2`) to extract a face
 embedding. InsightFace's own license terms restrict those specific model
 *weights* to non-commercial research use, which is a materially different
-license than this project's own Apache-2.0. Anyone adding a new
-`IdentityProvider` (see `studio/providers/base.py`) under
+license than this project's own Apache-2.0.
+
+**This applies to any provider that depends on InsightFace, regardless of
+which Protocol category it implements (`ImageProvider`, `IdentityProvider`,
+or any future category in `studio/providers/base.py`) or which
+`PROVIDERS[...]` dict entry it's registered under in
+`studio/providers/registry.py`.** The license risk comes from *what the
+provider loads at runtime* (an InsightFace model), not from *which Python
+Protocol it happens to implement* — an `ImageProvider` that calls
+InsightFace under the hood (e.g. through a ComfyUI node like
+`InstantIDFaceAnalysis`) is exactly as exposed as an `IdentityProvider`
+that does the same thing. Anyone adding such a provider anywhere under
 `studio/providers/` must follow the rules below so that using
 OpenVideoStudio's Apache-2.0 code never silently puts a user in violation
 of a model license the project doesn't control.
 
 ## 1. Which current providers touch InsightFace
 
-| Provider | File | Depends on InsightFace? |
-|---|---|---|
-| `TextIdentityProvider` | `studio/providers/identity_text.py` | No — pure text formatting from `CharacterAsset.description`. Safe. |
-| `ImageReferenceIdentityProvider` | `studio/providers/identity_image.py` | No — hands back one of the Character Bible's own reference image `Path`s for img2img conditioning. No face-recognition model involved. Safe. |
+| Provider | File | Registered as | Depends on InsightFace? |
+|---|---|---|---|
+| `TextIdentityProvider` | `studio/providers/identity_text.py` | `PROVIDERS["identity"]["text"]` | No — pure text formatting from `CharacterAsset.description`. Safe. |
+| `ImageReferenceIdentityProvider` | `studio/providers/identity_image.py` | `PROVIDERS["identity"]["image_reference"]` | No — hands back one of the Character Bible's own reference image `Path`s for img2img conditioning. No face-recognition model involved. Safe. |
+| `InstantIDImageProvider` | `studio/providers/image/instantid_sdxl.py` | Not yet registered in `registry.py` | **Yes** — its ComfyUI graph (`providers/workflows/character_instantid_v1_api.json`) includes an `InstantIDFaceAnalysis` node, which loads an InsightFace model to extract the face embedding InstantID conditions on. Subject to every rule below, the same as any InsightFace-backed `IdentityProvider` would be — being registered under `PROVIDERS["image"]` instead of `PROVIDERS["identity"]` changes nothing about the license exposure. |
 
-Neither of the two providers registered in `studio/providers/registry.py`
-today (`"text"`, `"image_reference"`) downloads, loads, or calls any
-InsightFace model. Both are unrestricted for open-source and commercial
-use, same as the rest of this repository's Apache-2.0 code.
+`TextIdentityProvider` and `ImageReferenceIdentityProvider` are the only
+two providers in this repository, in any category, that are unrestricted
+for open-source and commercial use today, same as the rest of this
+repository's Apache-2.0 code. `InstantIDImageProvider` is not — see the
+rules below before it is registered or enabled by default anywhere.
 
-This table must be updated whenever a new `identity` provider is added to
-`PROVIDERS["identity"]` in `studio/providers/registry.py`.
+This table must be updated whenever a new provider — **in any category,
+not just `identity`** — that depends on InsightFace is added anywhere
+under `studio/providers/`.
 
 ## 2. Any InsightFace-dependent provider must be opt-in, never the default
 
-A future provider built on IP-Adapter FaceID, InstantID, PuLID, or
-anything else that loads `buffalo_l`/`antelopev2` (or any other InsightFace
-model pack) must:
+Any provider — `ImageProvider`, `IdentityProvider`, or otherwise — built on
+IP-Adapter FaceID, InstantID, PuLID, or anything else that loads
+`buffalo_l`/`antelopev2` (or any other InsightFace model pack), including
+`InstantIDImageProvider`, must:
 
-- **Never be `PROVIDERS["identity"]`'s implicit default.** A caller must
-  pass its registry name explicitly (`get_provider("identity",
-  "<insightface_backed_name>")`) to use it — nothing in `creative/*.py`'s
-  default pipeline path may select it automatically.
+- **Never be its category's implicit default in `PROVIDERS[...]`.** A
+  caller must pass its registry name explicitly (e.g.
+  `get_provider("image", "instantid_sdxl")`, or `get_provider("identity",
+  "<insightface_backed_name>")` for a future identity provider) to use it
+  — nothing in `creative/*.py`'s default pipeline path may select it
+  automatically, regardless of which `PROVIDERS[...]` category it lives
+  under.
 - **Fail loudly, not silently, when its InsightFace dependency isn't
   installed.** Missing `insightface`/missing model weights must raise a
   clear error at provider construction, not degrade to some other identity
@@ -125,9 +142,10 @@ and `buffalo_l` (326MB) by name.
   called an "open-sourced" package — its terms are not settled by simply
   reading the README once and assuming non-commercial use is
   pre-authorized.
-- A commercial user of OpenVideoStudio who enables a future
-  InsightFace-backed identity provider is accepting InsightFace's license
-  on top of OpenVideoStudio's, and must resolve it directly with
-  InsightFace (the contact addresses above) if their use is commercial.
-  OpenVideoStudio's own Apache-2.0 license cannot and does not grant rights
-  to InsightFace's models.
+- A commercial user of OpenVideoStudio who enables an InsightFace-backed
+  provider — `InstantIDImageProvider` today, or any future provider in any
+  category — is accepting InsightFace's license on top of
+  OpenVideoStudio's, and must resolve it directly with InsightFace (the
+  contact addresses above) if their use is commercial. OpenVideoStudio's
+  own Apache-2.0 license cannot and does not grant rights to InsightFace's
+  models.
