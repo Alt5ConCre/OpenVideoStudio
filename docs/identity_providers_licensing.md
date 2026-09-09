@@ -28,13 +28,14 @@ of a model license the project doesn't control.
 |---|---|---|---|
 | `TextIdentityProvider` | `studio/providers/identity_text.py` | `PROVIDERS["identity"]["text"]` | No — pure text formatting from `CharacterAsset.description`. Safe. |
 | `ImageReferenceIdentityProvider` | `studio/providers/identity_image.py` | `PROVIDERS["identity"]["image_reference"]` | No — hands back one of the Character Bible's own reference image `Path`s for img2img conditioning. No face-recognition model involved. Safe. |
-| `InstantIDImageProvider` | `studio/providers/image/instantid_sdxl.py` | Not yet registered in `registry.py` | **Yes** — its ComfyUI graph (`providers/workflows/character_instantid_v1_api.json`) includes an `InstantIDFaceAnalysis` node, which loads an InsightFace model to extract the face embedding InstantID conditions on. Subject to every rule below, the same as any InsightFace-backed `IdentityProvider` would be — being registered under `PROVIDERS["image"]` instead of `PROVIDERS["identity"]` changes nothing about the license exposure. |
+| `InstantIDImageProvider` | `studio/providers/image/instantid_sdxl.py` | `PROVIDERS["image"]["instantid_sdxl"]` | **Yes** — its ComfyUI graph (`providers/workflows/character_instantid_v1_api.json`) includes an `InstantIDFaceAnalysis` node, which loads an InsightFace model to extract the face embedding InstantID conditions on. Subject to every rule below, the same as any InsightFace-backed `IdentityProvider` would be — being registered under `PROVIDERS["image"]` instead of `PROVIDERS["identity"]` changes nothing about the license exposure. |
 
 `TextIdentityProvider` and `ImageReferenceIdentityProvider` are the only
 two providers in this repository, in any category, that are unrestricted
 for open-source and commercial use today, same as the rest of this
-repository's Apache-2.0 code. `InstantIDImageProvider` is not — see the
-rules below before it is registered or enabled by default anywhere.
+repository's Apache-2.0 code. `InstantIDImageProvider` is not — it is
+registered in `registry.py` today, so the rules below apply to it now,
+not just at some future registration point.
 
 This table must be updated whenever a new provider — **in any category,
 not just `identity`** — that depends on InsightFace is added anywhere
