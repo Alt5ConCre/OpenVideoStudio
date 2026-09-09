@@ -43,3 +43,7 @@ Thumbs.db
 
 # Local tooling config (not project content)
 .claude/
+
+studio/identity_image_test/
+studio/mara_bible/
+*_bible/

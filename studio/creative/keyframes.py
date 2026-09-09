@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from providers.base import ImageProvider
+from providers.registry import get_provider
+from identity.models import CharacterAsset
 from creative.identity import (
     format_character_identity, format_environment_identity, ANTI_TEXT_NEGATIVE_PROMPT,
 )
@@ -45,6 +47,8 @@ def generate_keyframes(
     image_provider: ImageProvider, storyboard: dict, out_dir: Path, width: int = 448, height: int = 768,
     seed_base: int = 0, checkpoint: Optional[Callable[[dict], None]] = None,
     reference_set: Optional[dict[str, Path]] = None, default_reference_denoise: float = 0.5,
+    character_asset: Optional[CharacterAsset] = None, identity_provider_name: Optional[str] = None,
+    identity_denoise: float = 0.55,
 ) -> dict:
     """reference_set (optional): {name: path}, typically produced by
     creative.references.generate_reference_set. A scene opts into
@@ -54,9 +58,24 @@ def generate_keyframes(
     character or a recurring piece of hardware. A scene with no
     `reference_image` (or when reference_set is None) generates exactly as
     before, pure txt2img -- this is purely additive, existing storyboards
-    and callers are unaffected."""
+    and callers are unaffected.
+
+    character_asset/identity_provider_name (both optional): an alternative,
+    Character-Bible-driven source of image conditioning via
+    providers/base.py's IdentityProvider interface (e.g. "image_reference",
+    see providers/identity_image.py) -- used only for a scene that doesn't
+    already resolve a reference via reference_set/`reference_image`, so the
+    two mechanisms don't fight over the same scene. identity_denoise is the
+    default denoise for this path (per-scene `reference_denoise` still
+    overrides it, same as the reference_set path)."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    identity_provider = None
+    identity_encoding = None
+    if character_asset is not None and identity_provider_name:
+        identity_provider = get_provider("identity", identity_provider_name)
+        identity_encoding = identity_provider.encode_character(character_asset)
 
     for scene in storyboard["scenes"]:
         n = scene["scene_number"]
@@ -67,14 +86,20 @@ def generate_keyframes(
             continue
 
         seed = seed_base + n
+        image_prompt = _composed_image_prompt(storyboard, scene)
         ref_name = scene.get("reference_image")
         ref_path = (reference_set or {}).get(ref_name) if ref_name else None
+        ref_denoise = scene.get("reference_denoise", default_reference_denoise)
+        if ref_path is None and identity_encoding is not None:
+            application = identity_provider.apply_identity(image_prompt, identity_encoding)
+            ref_path = application.controls.get("reference_image_path")
+            ref_denoise = scene.get("reference_denoise", identity_denoise)
         extra_kwargs = {}
         if ref_path is not None:
             extra_kwargs["reference_image_path"] = ref_path
-            extra_kwargs["denoise"] = scene.get("reference_denoise", default_reference_denoise)
+            extra_kwargs["denoise"] = ref_denoise
         path = image_provider.generate_image(
-            prompt=_composed_image_prompt(storyboard, scene), negative_prompt=_composed_negative_prompt(scene),
+            prompt=image_prompt, negative_prompt=_composed_negative_prompt(scene),
             width=width, height=height, seed=seed, **extra_kwargs,
         )
         # ComfyUI writes into its own output/ tree; copy so the run directory stays self-contained.

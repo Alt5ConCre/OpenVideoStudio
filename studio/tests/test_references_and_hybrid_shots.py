@@ -131,6 +131,87 @@ def test_generate_keyframes_reference_image_missing_from_set_falls_back_to_txt2i
     assert provider.last_call_kwargs["reference_image_path"] is None
 
 
+# ------------------------------------- keyframes.py IdentityProvider support ---
+def _character_asset_with_reference(tmp_path, filename="front.png"):
+    from identity.models import CharacterAsset, ReferenceImage
+
+    ref_dir = tmp_path / "char_bible"
+    ref_dir.mkdir()
+    ref_path = ref_dir / filename
+    ref_path.write_bytes(b"ref")
+    return CharacterAsset(
+        character_id="char_1",
+        root=ref_dir,
+        description={"name_or_role": "Mara"},
+        reference_images=(ReferenceImage(path=ref_path, view="front"),),
+    )
+
+
+def test_generate_keyframes_with_character_asset_uses_identity_provider(tmp_path):
+    asset = _character_asset_with_reference(tmp_path)
+    provider = _FakeImageProvider(tmp_path)
+    storyboard = {"scenes": [{"scene_number": 1, "image_prompt": "a"}]}
+
+    generate_keyframes(
+        provider, storyboard, tmp_path / "out",
+        character_asset=asset, identity_provider_name="image_reference",
+    )
+
+    assert provider.last_call_kwargs["reference_image_path"] == asset.reference_images[0].path
+    assert provider.last_call_kwargs["denoise"] == 0.55  # default identity_denoise
+
+
+def test_generate_keyframes_identity_denoise_is_configurable_and_overridable_per_scene(tmp_path):
+    asset = _character_asset_with_reference(tmp_path)
+    provider = _FakeImageProvider(tmp_path)
+    storyboard = {
+        "scenes": [
+            {"scene_number": 1, "image_prompt": "a", "reference_denoise": 0.7},
+        ]
+    }
+
+    generate_keyframes(
+        provider, storyboard, tmp_path / "out",
+        character_asset=asset, identity_provider_name="image_reference", identity_denoise=0.55,
+    )
+
+    assert provider.last_call_kwargs["denoise"] == 0.7
+
+
+def test_generate_keyframes_explicit_reference_image_takes_priority_over_identity_provider(tmp_path):
+    """A scene that already opts into reference_set conditioning shouldn't
+    also be routed through the identity provider -- the two mechanisms
+    must not fight over the same scene."""
+    asset = _character_asset_with_reference(tmp_path, filename="identity_ref.png")
+    set_ref_path = tmp_path / "char_a.png"
+    set_ref_path.write_bytes(b"ref")
+    provider = _FakeImageProvider(tmp_path)
+    storyboard = {
+        "scenes": [
+            {"scene_number": 1, "image_prompt": "a", "reference_image": "char_a"},
+        ]
+    }
+
+    generate_keyframes(
+        provider, storyboard, tmp_path / "out", reference_set={"char_a": set_ref_path},
+        character_asset=asset, identity_provider_name="image_reference",
+    )
+
+    assert provider.last_call_kwargs["reference_image_path"] == set_ref_path
+
+
+def test_generate_keyframes_without_identity_provider_name_is_unchanged(tmp_path):
+    """Backward compatibility: passing character_asset alone (no
+    identity_provider_name) must not enable identity conditioning."""
+    asset = _character_asset_with_reference(tmp_path)
+    provider = _FakeImageProvider(tmp_path)
+    storyboard = {"scenes": [{"scene_number": 1, "image_prompt": "a"}]}
+
+    generate_keyframes(provider, storyboard, tmp_path / "out", character_asset=asset)
+
+    assert provider.last_call_kwargs["reference_image_path"] is None
+
+
 # ------------------------------------------- clips.py hybrid technique ---
 def test_generate_clips_default_technique_is_unchanged(tmp_path):
     """Backward compatibility: a scene with no shot_technique field must

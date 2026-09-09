@@ -7,8 +7,11 @@ from __future__ import annotations
 
 from providers.llm.ollama_provider import OllamaProvider
 from providers.image.comfyui_sdxl import ComfyUISDXLProvider
+from providers.image.instantid_sdxl import InstantIDImageProvider
 from providers.video.comfyui_ltx import ComfyUILTXProvider
 from providers.tts.edge_tts_provider import EdgeTTSProvider
+from providers.identity_text import TextIdentityProvider
+from providers.identity_image import ImageReferenceIdentityProvider
 
 PROVIDERS = {
     "llm": {
@@ -18,12 +21,19 @@ PROVIDERS = {
     },
     "image": {
         "comfyui_sdxl": ComfyUISDXLProvider,
+        "instantid_sdxl": InstantIDImageProvider,
     },
     "video": {
         "comfyui_ltx": ComfyUILTXProvider,
     },
     "tts": {
         "edge_tts": EdgeTTSProvider,
+    },
+    "identity": {
+        # Compatibility baseline. Reference-image, embedding, fine-tune, and
+        # composite methods can register here without changing orchestration.
+        "text": TextIdentityProvider,
+        "image_reference": ImageReferenceIdentityProvider,
     },
 }
 
