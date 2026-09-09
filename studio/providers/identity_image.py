@@ -20,6 +20,8 @@ useful today.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from identity.models import CharacterAsset, IdentityApplication, IdentityEncoding
 
 
