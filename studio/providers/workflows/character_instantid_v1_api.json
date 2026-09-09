@@ -97,7 +97,7 @@
   },
   "16": {
     "inputs": {
-      "control_net_name": "instantid\\diffusion_pytorch_model.safetensors"
+      "control_net_name": "instantid/diffusion_pytorch_model.safetensors"
     },
     "class_type": "ControlNetLoader",
     "_meta": {
