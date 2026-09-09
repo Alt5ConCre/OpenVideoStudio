@@ -56,6 +56,15 @@ class IdentityProvider(Protocol):
     Implementations may use reference images, embeddings, fine-tunes, face
     features, text, or a future mechanism. The creative pipeline only passes
     canonical assets in and opaque, provider-owned conditioning out.
+
+    TODO: creative/keyframes.py currently only reads
+    controls["reference_image_path"] off the IdentityApplication returned
+    by apply_identity() -- it never uses the returned application.prompt.
+    Any purely text-based IdentityProvider (e.g. TextIdentityProvider)
+    is therefore a no-op in practice: the identity text gets computed but
+    is never merged into the prompt actually sent to the image provider.
+    Needs a merge policy decision (replace vs. append) before this can be
+    fixed in keyframes.py. (Source: /ultrareview 2026-09 review finding)
     """
 
     def encode_character(self, character_asset: CharacterAsset) -> IdentityEncoding: ...
