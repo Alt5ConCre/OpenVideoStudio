@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 import gradio as gr
+from fastapi import FastAPI
 from dotenv import load_dotenv
 
 STUDIO_ROOT = Path(__file__).resolve().parent
@@ -307,6 +308,11 @@ with gr.Blocks(title="OpenVideoStudio") as demo:
             )
             creative_open_folder_btn.click(open_output_folder, inputs=[creative_run_dir_state])
 
+
+# ASGI entrypoint for hosts such as Vercel. The local launcher below is kept
+# for the normal desktop/Windows workflow.
+app = FastAPI(title="OpenVideoStudio")
+gr.mount_gradio_app(app, demo, path="/")
 
 if __name__ == "__main__":
     demo.launch()
