@@ -1,14 +1,10 @@
-"""Vercel entrypoint for OpenVideoStudio.
+"""Vercel ASGI entrypoint for OpenVideoStudio.
 
-The actual UI lives in studio/app.py as a Gradio Blocks application.
-Vercel's Python runtime requires a top-level ASGI/WSGI app, so we mount
-the Gradio UI into FastAPI instead of treating studio/app.py as a raw
-Vercel function.
+Gradio exposes its server as a FastAPI-compatible application. Build that
+application directly instead of calling demo.launch(), which is intended for
+a long-running local process.
 """
-from fastapi import FastAPI
-import gradio as gr
-
 from studio.app import demo
+from gradio.routes import App as GradioApp
 
-app = FastAPI(title="OpenVideoStudio")
-app = gr.mount_gradio_app(app, demo, path="/")
+app = GradioApp.create_app(demo)
